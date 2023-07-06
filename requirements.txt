@@ -1,1 +1,4 @@
-telebot, mg, pygame
+telebot
+mg
+pygame
+
