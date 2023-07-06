@@ -43,16 +43,19 @@ def start(message):
 # Обработка текстовых сообщений
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
-    # Получение координат выстрела от игрока
-    if message.text.isdigit():
-        guess_row = int(message.text)
-        if guess_row >= 0 and guess_row < board_size:
-            bot.send_message(message.chat.id, "Введите номер столбца (0-4):", reply_markup=create_keyboard())
-            bot.register_next_step_handler(message, process_column_input, guess_row)
-        else:
-            bot.send_message(message.chat.id, "Неверный номер строки. Попробуйте еще раз.")
+    if message.text == "/restart":  # Обработка команды /restart
+        restart_game(message.chat.id)
     else:
-        bot.send_message(message.chat.id, "Неверный формат ввода. Пожалуйста, введите номер строки (0-4).")
+        # Получение координат выстрела от игрока
+        if message.text.isdigit():
+            guess_row = int(message.text)
+            if guess_row >= 0 and guess_row < board_size:
+                bot.send_message(message.chat.id, "Введите номер столбца (0-4):", reply_markup=create_keyboard())
+                bot.register_next_step_handler(message, process_column_input, guess_row)
+            else:
+                bot.send_message(message.chat.id, "Неверный номер строки. Попробуйте еще раз.")
+        else:
+            bot.send_message(message.chat.id, "Неверный формат ввода. Пожалуйста, введите номер строки (0-4).")
 
 # Создание клавиатуры для выбора столбца
 def create_keyboard():
@@ -80,7 +83,7 @@ def process_column_input(message, guess_row):
                 board[guess_row][guess_col] = "#"
                 bot.send_message(message.chat.id, "Вы промахнулись!")
 
-            # Проверка условия завершения игловления игры
+            # Проверка условия завершения игры
             if len(bot_ships) == 0:
                 bot.send_message(message.chat.id, "Поздравляю! Вы победили!")
                 return
@@ -131,6 +134,16 @@ def send_bot_board(chat_id):
     for row in bot_board:
         board_str += " ".join(row) + "\n"
     bot.send_message(chat_id, "Игровое поле бота:\n" + board_str)
+
+# Функция для сброса состояния игры и перезапуска
+def restart_game(chat_id):
+    global board, bot_board, player_ships, bot_ships
+    board = [["O" for _ in range(board_size)] for _ in range(board_size)]
+    bot_board = [["O" for _ in range(board_size)] for _ in range(board_size)]
+    player_ships = place_ships()
+    bot_ships = place_ships()
+    send_board(chat_id)
+    send_bot_board(chat_id)
 
 # Запуск телеграм-бота
 bot.polling()
